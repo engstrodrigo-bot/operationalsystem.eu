@@ -1,1 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operational System | Console v2.0</title>
+    <style>
+        :root {
+            --term-green: #00ff00;
+            --term-bg: #0a0a0a;
+            --term-dim: #004400;
+        }
+        body {
+            background-color: var(--term-bg);
+            color: var(--term-green);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .console {
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--term-dim);
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+        }
+        h1 { font-size: 1.1rem; border-bottom: 1px solid var(--term-dim); padding-bottom: 10px; }
+        .line { margin: 15px 0; }
+        input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--term-dim);
+            color: var(--term-green);
+            width: 100%;
+            font-size: 1rem;
+            outline: none;
+            padding: 5px 0;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--term-green);
+            background: transparent;
+            color: var(--term-green);
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .btn:hover { background: var(--term-dim); }
+        .btn:active { background: var(--term-green); color: black; }
+        .status-box {
+            border: 1px dashed var(--term-dim);
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="console">
+        <h1>> OPERATION_SYSTEM.EU_CORE</h1>
+        
+        <div id="input-section">
+            <p class="line">SISTEMA ATIVO. INSIRA A REFERÊNCIA DO SETOR:</p>
+            <input type="text" id="setor" placeholder="ex: Rue de la Loi, Brussels" autocomplete="off">
+            <button class="btn" onclick="executarSinc()">EXECUTAR_SINC</button>
+        </div>
 
+        <div id="result-section" class="status-box">
+            <p>> STATUS: COORDENADAS_EXTRAÍDAS_OK</p>
+            <p>> ZONA: <span id="local-nome">---</span></p>
+            <p>> COORDS: <span id="coords-val">---</span></p>
+            <a id="gpsLink" href="#" class="btn" style="background: var(--term-green); color: black;">CONFIRMAR_INJEÇÃO_GPS</a>
+            <button class="btn" style="border-color: #ff0000; color: #ff0000;" onclick="location.reload()">ABORTAR_PROCESSO</button>
+        </div>
+    </div>
+
+    <script>
+        async function executarSinc() {
+            const endereco = document.getElementById('setor').value;
+            if(!endereco) return;
+
+            // Busca via API Nominatim
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if(data && data.length > 0) {
+                    const lat = data[0].lat;
+                    const lon = data[0].lon;
+                    
+                    document.getElementById('local-nome').innerText = data[0].display_name.split(',')[0];
+                    document.getElementById('coords-val').innerText = `${lat}, ${lon}`;
+                    
+                    // Link 'geo:' para acionar o Mock Location no Android
+                    document.getElementById('gpsLink').href = `geo:${lat},${lon}?q=${lat},${lon}&z=18`;
+                    
+                    document.getElementById('input-section').classList.add('hidden');
+                    document.getElementById('result-section').style.display = 'block';
+                } else {
+                    alert("ERRO_404: SETOR NÃO RECONHECIDO NO CLOUD.");
+                }
+            } catch (error) {
+                alert("ERRO_DE_REDE: FALHA NA COMUNICAÇÃO COM O SERVIDOR.");
+            }
+        }
+    </script>
+</body>
+</html>
