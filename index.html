@@ -18,7 +18,6 @@
             margin: 0;
             padding: 0;
         }
-        /* Barra Superior Estilo Oficial */
         .header {
             background-color: var(--belgian-blue);
             color: white;
@@ -55,7 +54,7 @@
         }
         input[type="text"] {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #ccc;
             border-radius: 3px;
             box-sizing: border-box;
@@ -65,22 +64,23 @@
             background-color: #5cb85c;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 3px;
             cursor: pointer;
             font-weight: bold;
             margin-top: 10px;
             text-transform: uppercase;
             font-size: 12px;
+            width: 100%;
         }
         .btn-primary:hover { background-color: #449d44; }
         
-        /* Tabela de Logs Estilo Imagem WhatsApp */
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
             margin-top: 20px;
+            display: none; /* Escondido até a busca ser feita */
         }
         th {
             background-color: #e9eef2;
@@ -93,16 +93,18 @@
             padding: 10px;
             border: 1px solid var(--border-color);
             background-color: #fff;
+            text-align: left;
         }
         .status-ok { color: #27ae60; font-weight: bold; }
         .action-link {
             display: inline-block;
             background: var(--belgian-blue);
             color: white;
-            padding: 5px 10px;
+            padding: 8px 15px;
             text-decoration: none;
             border-radius: 3px;
             font-size: 11px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -122,64 +124,67 @@
         <button class="btn-primary" onclick="executarSinc()">Rechercher Coordonnées</button>
     </div>
 
-    <div id="result-area" style="display:none;">
-        <table>
-            <thead>
-                <tr>
-                    <th>LOCALISATION</th>
-                    <th>COORDONNÉES</th>
-                    <th>ÉTAT</th>
-                    <th>ACTION</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td id="local-nome">---</td>
-                    <td id="coords-val">---</td>
-                    <td class="status-ok">VÉRIFIÉ</td>
-                    <td><a id="gpsLink" href="#" class="action-link">INJECTER GPS</a></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <table id="result-area">
+        <thead>
+            <tr>
+                <th>LOCALISATION</th>
+                <th>COORDONNÉES</th>
+                <th>ÉTAT</th>
+                <th>ACTION</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="local-nome">---</td>
+                <td id="coords-val">---</td>
+                <td class="status-ok">VÉRIFIÉ</td>
+                <td><a id="gpsLink" href="#" class="action-link">INJECTER GPS</a></td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 
 <script>
- async function executarSinc() { // Nome sincronizado com o botão HTML
+async function executarSinc() {
     const query = document.getElementById('setor').value;
     if(!query) return;
 
     try {
-        // Busca focada na Bélgica
-        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Belgium`);
-        const data = await resp.json();
+        // Busca focada na Bélgica para evitar erros de endereços globais
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Belgium`;
+        const response = await fetch(url);
+        const data = await response.json();
         
         if(data && data.length > 0) {
             const lat = data[0].lat;
             const lon = data[0].lon;
             
-            // Força o uso de ponto decimal e limita a 6 casas decimais (Padrão Belga)
+            // Força o padrão internacional (ponto) e precisão de 6 casas decimais
             const latFixa = parseFloat(lat).toFixed(6);
             const lonFixa = parseFloat(lon).toFixed(6);
 
-            // Pega o primeiro nome do local
+            // Extrai apenas o nome principal do local
             const shortName = data[0].display_name.split(',')[0];
             
-            // Atualiza os campos usando os IDs corretos do seu HTML
+            // Atualiza os campos na tabela
             document.getElementById('local-nome').innerText = shortName;
             document.getElementById('coords-val').innerText = latFixa + ", " + lonFixa;
             
-            // Configura o link de injeção GPS
+            // Configura o link GEO para o Mock Location do Android
             const linkGps = document.getElementById('gpsLink');
             linkGps.href = `geo:${latFixa},${lonFixa}?q=${latFixa},${lonFixa}&z=19`;
             
-            // Torna a área de resultado visível
-            document.getElementById('result-area').style.display = 'block';
+            // Mostra a tabela de resultados
+            document.getElementById('result-area').style.display = 'table';
             
         } else {
-            alert("Emplacement introuvable.");
+            alert("Erreur: Emplacement introuvable. Vérifiez l'adresse.");
         }
     } catch (e) {
-        alert("Erreur de connexion au serveur.");
+        alert("Erreur de connexion au serveur opérationnel.");
     }
 }
+</script>
+
+</body>
+</html>
