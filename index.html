@@ -145,33 +145,32 @@
 </div>
 
 <script>
-    async function executarSinc() {
-        const endereco = document.getElementById('setor').value;
-        if(!endereco) return;
+   async function localizar() {
+    let query = document.getElementById('setor').value;
+    if(!query) return;
 
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}`;
+    // Limpa palavras que costumam travar a busca da API
+    query = query.replace(/Numéro|Número|Nº/gi, "");
+
+    try {
+        // Adiciona o país para filtrar melhor os resultados
+        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Belgium`);
+        const data = await resp.json();
         
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
+        if(data && data.length > 0) {
+            const lat = data[0].lat;
+            const lon = data[0].lon;
+            const shortName = data[0].display_name.split(',')[0];
             
-            if(data && data.length > 0) {
-                const lat = data[0].lat;
-                const lon = data[0].lon;
-                
-                document.getElementById('local-nome').innerText = data[0].display_name.split(',')[0];
-                document.getElementById('coords-val').innerText = lat + ", " + lon;
-                document.getElementById('gpsLink').href = `geo:${lat},${lon}?q=${lat},${lon}&z=18`;
-                
-                document.getElementById('result-area').style.display = 'block';
-            } else {
-                alert("Erreur: Adresse non trouvée.");
-            }
-        } catch (error) {
-            alert("Erreur de réseau.");
+            document.getElementById('display-name').innerText = shortName;
+            document.getElementById('display-coords').innerText = lat + ", " + lon;
+            
+            document.getElementById('geo-trigger').href = `geo:${lat},${lon}?q=${lat},${lon}&z=19`;
+            document.getElementById('result').style.display = 'table';
+        } else {
+            alert("Erreur: Emplacement introuvable. Essayez d'enlever le mot 'Numéro'.");
         }
+    } catch (e) {
+        alert("Erreur de connexion.");
     }
-</script>
-
-</body>
-</html>
+}
