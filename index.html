@@ -145,32 +145,39 @@
 </div>
 
 <script>
-   async function localizar() {
-    let query = document.getElementById('setor').value;
+  async function localizar() {
+    const query = document.getElementById('setor').value;
     if(!query) return;
 
-    // Limpa palavras que costumam travar a busca da API
-    query = query.replace(/Numéro|Número|Nº/gi, "");
-
     try {
-        // Adiciona o país para filtrar melhor os resultados
         const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Belgium`);
         const data = await resp.json();
         
         if(data && data.length > 0) {
             const lat = data[0].lat;
             const lon = data[0].lon;
+            
+            // --- COLE O NOVO CÓDIGO AQUI ---
+            // Força o uso de ponto decimal e limita a 6 casas decimais para bater com o sistema oficial
+            const latFixa = parseFloat(lat).toFixed(6);
+            const lonFixa = parseFloat(lon).toFixed(6);
+
             const shortName = data[0].display_name.split(',')[0];
             
             document.getElementById('display-name').innerText = shortName;
-            document.getElementById('display-coords').innerText = lat + ", " + lon;
             
-            document.getElementById('geo-trigger').href = `geo:${lat},${lon}?q=${lat},${lon}&z=19`;
+            // Exibe com ponto no site
+            document.getElementById('display-coords').innerText = latFixa + ", " + lonFixa;
+            
+            // Injeta no GPS com a formatação correta
+            document.getElementById('geo-trigger').href = `geo:${latFixa},${lonFixa}?q=${latFixa},${lonFixa}&z=19`;
+            // -------------------------------
+
             document.getElementById('result').style.display = 'table';
         } else {
-            alert("Erreur: Emplacement introuvable. Essayez d'enlever le mot 'Numéro'.");
+            alert("Emplacement introuvable.");
         }
     } catch (e) {
-        alert("Erreur de connexion.");
+        alert("Erreur de connexion au serveur.");
     }
 }
